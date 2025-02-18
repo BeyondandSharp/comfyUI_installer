@@ -1,0 +1,20 @@
+{
+    "name": "ComfyUI Installer",
+    "version": "0.0.1",
+    "use_local_python": false,
+    "python_version": "3.12",
+    "http_proxy": "http://192.168.0.100:7897",
+    "sevenza": "//192.168.0.100/mcs/Working_Group/Installation_package/7z/x64/7za.exe",
+    "python_installer_dir": "//192.168.0.100/mcs/Working_Group/Installation_package/Python",
+    "vc_redist_installer": "//192.168.0.100/mcs/Working_Group/Installation_package/vc_redist/VC_redist.x64.exe",
+    "git_installer_dir": "//192.168.0.100/mcs/Working_Group/Installation_package/Git",
+    "proxy_git": "192.168.0.100:5000",
+    "comfyUI_url": "http://github.com/comfyanonymous/ComfyUI.git",
+    "comfyUI_lan_url": "http://192.168.0.100:8080/scm/repo/admin/ComfyUI",
+    "comfyUI_manager_url": "https://github.com/BeyondandSharp/ComfyUI-Manager.git",
+    "comfyUI_manager_lan_url": "http://192.168.0.100:8080/scm/repo/admin/ComfyUI-Manager",
+    "branch_uid": "Branch_UID",
+    "pip_config":"pip.ini",
+    "cu_version": "126",
+    "pytorch_url": "http://192.168.0.100:20200/pytorch/cu126/+simple"
+}
