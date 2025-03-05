@@ -7,8 +7,9 @@ set COMFYUI_MANAGER_ARIA2_SECRET=
 set COMFYUI_MANAGER_DIR_REMOTE=E:\MCS\ComfyUI
 set COMFYUI_MANAGER_DIR_NET=\\192.168.0.100\mcs\ComfyUI
 set GITCACHE_HTTP_PROXY=192.168.0.100:5000
-set TOKEN_PATH=\\192.168.0.100\mcs\ComfyUI\token
+set TOKEN_PATH=\\192.168.0.100\mcs\ComfyUI\token.json
 set "PATH=%PATH%"
+set CUSTOMNODEDB=\\192.168.0.100\mcs\ComfyUI\custom-list
 
 set "script_path=%~dp0"
 
