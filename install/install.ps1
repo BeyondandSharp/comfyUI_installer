@@ -372,7 +372,7 @@ Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.e
 Write-Log "复制$comfyui_installer_path\run.bat 到 $base_dir"
 Copy-Item -Path $comfyui_installer_path\run.bat -Destination $base_dir -Force
 #查找行"set PATH=%PATH%",替换为"set PATH=$python_embed_dir\Scripts;%PATH%"
-$bat_file = Join-Path -Path $comfyUI_dir -ChildPath "run.bat"
+$bat_file = Join-Path -Path $base_dir -ChildPath "run.bat"
 $bat_content = Get-Content -Path $bat_file
 $bat_content = $bat_content -replace "set `"PATH=%PATH%`"", "set `"PATH=$python_embed_dir;$python_embed_dir\Scripts;%PATH%`""
 $utf8NoBOM = New-Object System.Text.UTF8Encoding($false)

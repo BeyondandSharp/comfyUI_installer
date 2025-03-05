@@ -14,5 +14,5 @@ set "script_path=%~dp0"
 
 ::Cleaning up extra lines in the <custom_nodes\.git\config> for some reason causes comfyui manager to load incorrectly
 python_embed\python.exe "\\192.168.0.100\mcs\Working_Group\Installation_package\ComfyUI\install\git_clean.py" %script_path%ComfyUI\custom_nodes
-python_embed\python.exe main.py --listen 0.0.0.0 --port 8188 --auto-launch
+python_embed\python.exe ComfyUI\main.py --listen 0.0.0.0 --port 8188 --auto-launch
 pause 
