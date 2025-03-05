@@ -7,12 +7,12 @@ set COMFYUI_MANAGER_ARIA2_SECRET=
 set COMFYUI_MANAGER_DIR_REMOTE=E:\MCS\ComfyUI
 set COMFYUI_MANAGER_DIR_NET=\\192.168.0.100\mcs\ComfyUI
 set GITCACHE_HTTP_PROXY=192.168.0.100:5000
+set TOKEN_PATH=\\192.168.0.100\mcs\ComfyUI\token
 set "PATH=%PATH%"
-set "python_path="
 
 set "script_path=%~dp0"
 
 ::Cleaning up extra lines in the <custom_nodes\.git\config> for some reason causes comfyui manager to load incorrectly
-%python_path% "\\192.168.0.100\mcs\Working_Group\Installation_package\ComfyUI\install\git_clean.py" %script_path%custom_nodes
-%python_path% main.py --listen 0.0.0.0 --port 8188 --auto-launch
+python_embed\python.exe "\\192.168.0.100\mcs\Working_Group\Installation_package\ComfyUI\install\git_clean.py" %script_path%ComfyUI\custom_nodes
+python_embed\python.exe main.py --listen 0.0.0.0 --port 8188 --auto-launch
 pause 

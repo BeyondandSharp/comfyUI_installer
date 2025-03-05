@@ -77,8 +77,8 @@ if ($use_local_python) {
     # 测试是否存在python
     Write-Log "测试是否存在python"
     $hasPython_path = Get-Command -Name "python" -ErrorAction SilentlyContinue
-    if ($python_path) {
-        & $python_path --version
+    if ($hasPython_path) {
+        & python --version
     } else {
         Write-Log "未找到python，请确认环境变量或修改配置文件"
     }
@@ -368,14 +368,13 @@ Write-Log "升级aria2p..."
 Write-Log "aria2p_cmd: $python_embed_dir\Scripts\pip3.exe $aria2p_cmd"
 Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $aria2p_cmd" -Wait
 
-#从comfyui_installer_path复制run.bat文件到comfyUI_dir
-Write-Log "复制$comfyui_installer_path\run.bat 到 $comfyUI_dir"
-Copy-Item -Path $comfyui_installer_path\run.bat -Destination $comfyUI_dir -Force
+#从comfyui_installer_path复制run.bat文件到$base_dir
+Write-Log "复制$comfyui_installer_path\run.bat 到 $base_dir"
+Copy-Item -Path $comfyui_installer_path\run.bat -Destination $base_dir -Force
 #查找行"set PATH=%PATH%",替换为"set PATH=$python_embed_dir\Scripts;%PATH%"
 $bat_file = Join-Path -Path $comfyUI_dir -ChildPath "run.bat"
 $bat_content = Get-Content -Path $bat_file
 $bat_content = $bat_content -replace "set `"PATH=%PATH%`"", "set `"PATH=$python_embed_dir;$python_embed_dir\Scripts;%PATH%`""
-$bat_content = $bat_content -replace "set `"python_path=`"", "set `"python_path=$python_embed_dir\python.exe`""
 $utf8NoBOM = New-Object System.Text.UTF8Encoding($false)
 $streamWriter = [System.IO.StreamWriter]::new($bat_file, $false, $utf8NoBOM)
 try {
