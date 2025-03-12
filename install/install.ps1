@@ -6,7 +6,7 @@ param (
 
 # 获取我的文档目录路径
 $my_documents = [Environment]::GetFolderPath("MyDocuments")
-$log_path = "$my_documents\comfyui_installer.log"
+$log_path = "$base_dir\comfyui_installer.log"
 
 # 构建函数Write-Log，用于输出日志
 function Write-Log {
@@ -122,7 +122,8 @@ if ($use_local_python) {
             Write-Log "Python安装成功"
             #安装pip
             Write-Log "安装pip..."
-            & $comfyui_installer_path\pip_install.ps1 -python_path $python_embed_dir -proxy $config.http_proxy
+            $pip_installer_path = Join-Path -Path $python_installer_dir -ChildPath "pip_installer\pip_install.ps1"
+            & $pip_installer_path -python_path $python_embed_dir -proxy $config.http_proxy
             # 修改_pth
             # 查找*._pth
             $pth = Get-ChildItem -Path $python_embed_dir -Filter "*._pth" -Recurse
@@ -233,144 +234,128 @@ if ($git_path) {
     }
 }
 
-$proxy_git = $config.proxy_git
-Write-Log "proxy_git: $proxy_git"
-# 克隆ComfyUI
-$comfyUI_lan_url = $config.comfyUI_lan_url
-Write-Log "comfyUI_lan_url: $comfyUI_lan_url"
-$comfyUI_url = $config.comfyUI_url
-Write-Log "comfyUI_url: $comfyUI_url"
-#尝试克隆ComfyUI
-$comfyUI_dir = Join-Path -Path $base_dir -ChildPath "ComfyUI"
-if (Test-Path -Path $comfyUI_dir) {
-    Write-Log "ComfyUI已存在"
-} else {
-    Write-Log "ComfyUI克隆中..."
-    Start-Process -FilePath "git" -ArgumentList "clone $comfyUI_lan_url $comfyUI_dir" -Wait
-    if (Test-Path -Path $comfyUI_dir) {
-        Write-Log "ComfyUI克隆成功"
-    } else {
-        Write-Log "ComfyUI克隆失败"
-        Write-Log "尝试直接从互联网克隆..."
-        Start-Process -FilePath "git" -ArgumentList "clone -c http.proxy=$proxy_git $comfyUI_url $comfyUI_dir" -Wait
-        if (Test-Path -Path $comfyUI_dir) {
-            Write-Log "ComfyUI克隆成功"
-        } else {
-            Write-Log "ComfyUI克隆失败"
-            pause
-            exit
-        }
-    }
+# pip package install
+function pip_install {
+    param (
+        [string]$r_path
+    )
+    & $python_embed_dir\Scripts\pip3.exe config list -v
+    $requirements_cmd = "install -r " + $r_path
+    Write-Log "安装 $r_path"
+    Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $requirements_cmd" -Wait
+    $requirements_cmd = "install -r " + $r_path + " --upgrade"
+    Write-Log "升级 $r_path"
+    Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $requirements_cmd" -Wait
 }
-
-# 克隆ComfyUI-Manager
-$comfyUI_manager_lan_url = $config.comfyUI_manager_lan_url
-Write-Log "comfyUI_manager_lan_url: $comfyUI_manager_lan_url"
-$comfyUI_manager_url = $config.comfyUI_manager_url
-Write-Log "comfyUI_manager_url: $comfyUI_manager_url"
-#尝试克隆ComfyUI-Manager
-$comfyUI_manager_dir = Join-Path -Path $comfyUI_dir -ChildPath "custom_nodes\ComfyUI-Manager"
-if (Test-Path -Path $comfyUI_manager_dir) {
-    Write-Log "ComfyUI-Manager已存在"
-    # 尝试更新
-    Set-Location -Path $comfyUI_manager_dir
-    Write-Log "ComfyUI-Manager更新中..."
-    Start-Process -FilePath "git" -ArgumentList "pull" -Wait
-} else {
-    Write-Log "ComfyUI-Manager克隆中..."
-    Start-Process -FilePath "git" -ArgumentList "clone $comfyUI_manager_lan_url $comfyUI_manager_dir" -Wait
-    if (Test-Path -Path $comfyUI_manager_dir) {
-        Write-Log "ComfyUI-Manager克隆成功"
-    } else {
-        Write-Log "ComfyUI-Manager克隆失败"
-        Write-Log "尝试直接从互联网克隆..."
-        Start-Process -FilePath "git" -ArgumentList "clone -c http.proxy=$proxy_git $comfyUI_manager_url $comfyUI_manager_dir" -Wait
-        if (Test-Path -Path $comfyUI_manager_dir) {
-            Write-Log "ComfyUI-Manager克隆成功"
-        } else {
-            Write-Log "ComfyUI-Manager克隆失败"
-            pause
-            exit
-        }
-    }
-}
-#切换到Branch_UID（强制）
-$branch_uid = $config.branch_uid
-Write-Log "branch_uid: $branch_uid"
-Set-Location -Path $comfyUI_manager_dir
-Write-Log "切换到$branch_uid 分支"
-Start-Process -FilePath "git" -ArgumentList "checkout $branch_uid --force" -Wait
 
 #设置pip源
 $pip_config = $config.pip_config
 Write-Log "pip_ini: $pip_config"
-#复制pip.ini到%appdata%\pip\pip.ini
-$pip_dir = Join-Path -Path $env:APPDATA -ChildPath "pip"
-if (Test-Path -Path $pip_dir) {
-    Write-Log "pip目录已存在"
-} else {
-    Write-Log "pip目录创建中..."
-    New-Item -Path $pip_dir -ItemType Directory
-    Write-Log "pip目录创建成功"
+
+#复制pip.ini到python_embed_dir\pip.ini
+Copy-Item -Path $comfyui_installer_path\$pip_config -Destination $python_embed_dir\$pip_config -Force
+
+#清理pip缓存
+Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe cache purge" -Wait
+
+$proxy_git = $config.proxy_git
+Write-Log "proxy_git: $proxy_git"
+
+function clone_success {
+    param (
+        [string]$dir,
+        [string]$cmd_clone,
+        [string]$branch
+    )
+    Write-Log "克隆成功 $cmd_clone"
+    #切换Branch（强制）
+    if ($branch -ne "main" -and $branch -ne "master") {
+        Write-Log "切换到 $branch 分支"
+        Set-Location $dir
+        Start-Process -FilePath "git" -ArgumentList "checkout $branch --force" -Wait
+    }
+    Set-Location $base_dir
+    $r_path = Join-Path -Path $dir -ChildPath "requirements.txt"
+    pip_install $r_path
 }
-#检查配置文件是否已存在
-if (Test-Path -Path $pip_dir\$pip_config) {
-    Write-Log "$pip_config 已存在"
-} else {
-    Write-Log "复制$comfyui_installer_path\$pip_config 到 $pip_dir\$pip_config"
-    Copy-Item -Path $comfyui_installer_path\$pip_config -Destination $pip_dir\$pip_config -Force
+
+# git clone
+function git_clone {
+    param (
+        [array]$git_list
+    )
+
+    # 遍历pre_installed
+    foreach ($item in $git_list) {
+        $name = $item.name
+        $path = $item.path
+        $urls = $item.urls
+        $branch = $item.branch
+        $dir = Join-Path -Path $base_dir -ChildPath $path
+        $dir = Join-Path -Path $dir -ChildPath $name
+
+        if (Test-Path -Path $dir) {
+            Write-Log "$name 已存在"
+            # 尝试更新
+            Write-Log "$name 更新中..."
+            $cmd_clone = "-C $dir pull"
+            Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait
+            clone_success $dir $cmd_clone $branch
+        } else {
+            Write-Log "$name 克隆中..."
+            # 如果url.origin-LAN存在
+            if ($urls.origin_LAN) {
+                $url = $urls.origin_LAN
+                $cmd_clone = "clone $url $dir"
+                Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait
+                if (Test-Path -Path $dir) {
+                    clone_success $dir $cmd_clone $branch
+                    continue
+                }
+            }
+            if ($urls.origin) {
+                # 使用服务器代理
+                $url = $urls.origin
+                if ($proxy_git){
+                    $cmd_clone = "clone -c http.proxy=$proxy_git $url $dir"
+                    Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait
+                    if (Test-Path -Path $dir) {
+                        clone_success $dir $cmd_clone $branch
+                        continue
+                    }
+                } else {
+                    # 直连
+                    $cmd_clone = "clone $url $dir"
+                    Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait
+                    if (Test-Path -Path $dir) {
+                        clone_success $dir $cmd_clone $branch
+                        continue
+                    }
+                }
+            }
+            else {
+                Write-Log "$name 克隆失败"
+                pause
+                exit
+            }
+        }
+    }
 }
 
-#安装pytorch
-$pytorch_url = $config.pytorch_url
-Write-Log "pytorch_url: $pytorch_url"
-#从使用python_embed安装pytorch
-$torch_cmd = "install torch torchvision torchaudio --index-url $pytorch_url"
-Write-Log "安装PyTorch..."
-Write-Log "torch_cmd: $python_embed_dir\Scripts\pip3.exe $torch_cmd"
-Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $torch_cmd" -Wait
-#升级pytorch
-$torch_cmd = "install torch torchvision torchaudio --upgrade --index-url $pytorch_url"
-Write-Log "升级PyTorch..."
-Write-Log "torch_cmd: $python_embed_dir\Scripts\pip3.exe $torch_cmd"
-Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $torch_cmd" -Wait
-#安装xformers
-$torch_cmd = "install xformers --index-url $pytorch_url"
-Write-Log "安装xformers..."
-Write-Log "xformers_cmd: $python_embed_dir\Scripts\pip3.exe $xformers_cmd"
-Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $xformers_cmd" -Wait
-#升级xformers
-$torch_cmd = "install xformers --upgrade --index-url $pytorch_url"
-Write-Log "升级xformers..."
-Write-Log "xformers_cmd: $python_embed_dir\Scripts\pip3.exe $xformers_cmd"
-Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $xformers_cmd" -Wait
+$git_list_path = Join-Path -Path $comfyui_installer_path -ChildPath "git_list.json"
+Write-Log "git_list_path: $git_list_path"
+$git_list_content = Get-Content -Path $git_list_path | ConvertFrom-Json
+$git_list = $git_list_content.git_list
+git_clone $git_list
 
-# 安装ComfyUI依赖
-Set-Location -Path $comfyUI_dir
-$requirements_cmd = "install -r requirements.txt"
-Write-Log "安装ComfyUI依赖..."
-Write-Log "requirements_cmd: $python_embed_dir\Scripts\pip3.exe $requirements_cmd"
-Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $requirements_cmd" -Wait
-#升级ComfyUI依赖
-$requirements_cmd = "install -r requirements.txt --upgrade"
-Write-Log "升级ComfyUI依赖..."
-Write-Log "requirements_cmd: $python_embed_dir\Scripts\pip3.exe $requirements_cmd"
-Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $requirements_cmd" -Wait
-
-# 安装aria2p
-$aria2p_cmd = "install aria2p"
-Write-Log "安装aria2p..."
-Write-Log "aria2p_cmd: $python_embed_dir\Scripts\pip3.exe $aria2p_cmd"
-Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $aria2p_cmd" -Wait
-#升级aria2p
-$aria2p_cmd = "install aria2p --upgrade"
-Write-Log "升级aria2p..."
-Write-Log "aria2p_cmd: $python_embed_dir\Scripts\pip3.exe $aria2p_cmd"
-Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $aria2p_cmd" -Wait
+$requirements_path = Join-Path -Path $comfyui_installer_path -ChildPath "requirements.txt"
+Set-Location $base_dir
+pip_install $requirements_path
 
 #从comfyui_installer_path复制run.bat文件到$base_dir
 Write-Log "复制$comfyui_installer_path\run.bat 到 $base_dir"
 Copy-Item -Path $comfyui_installer_path\run.bat -Destination $base_dir -Force
+
 #查找行"set PATH=%PATH%",替换为"set PATH=$python_embed_dir\Scripts;%PATH%"
 $bat_file = Join-Path -Path $base_dir -ChildPath "run.bat"
 $bat_content = Get-Content -Path $bat_file

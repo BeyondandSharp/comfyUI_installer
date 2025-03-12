@@ -1,0 +1,42 @@
+{
+    "base_dir": "base_dir",
+    "git_list": [
+        {
+            "name": "ComfyUI",
+            "path": "",
+            "urls": {
+                "origin": "https://github.com/comfyanonymous/ComfyUI",
+                "origin_LAN": "http://192.168.0.100:8080/scm/repo/admin/ComfyUI"
+            },
+            "branch": "master"
+        },
+        {
+            "name": "ComfyUI-Manager",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "https://github.com/BeyondandSharp/ComfyUI-Manager",
+                "origin_LAN": "http://192.168.0.100:8080/scm/repo/admin/ComfyUI-Manager",
+                "upstream": "https://github.com/ltdrdata/ComfyUI-Manager"
+            },
+            "branch": "Branch_UID"
+        },
+        {
+            "name": "comfyui-model-manager",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "https://github.com/BeyondandSharp/ComfyUI-Model-Manager",
+                "origin_LAN": "http://192.168.0.100:8080/scm/repo/admin/ComfyUI-Model-Manager",
+                "upstream": "http://github.com/hayden-fr/ComfyUI-Model-Manager"
+            },
+            "branch": "main"
+        },
+        {
+            "name": "comfyui-easy-use",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "http://github.com/yolain/ComfyUI-Easy-Use"
+            },
+            "branch": "main"
+        }
+    ]
+}

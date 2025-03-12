@@ -9,7 +9,7 @@ Write-Host "Python path: $python_path"
 Write-Host "Proxy: $proxy"
 Write-Host "Script URL: $scriptUrl"
 
-# æŸ¥æ‰¾*._pth
+# ²éÕÒ*._pth
 $pth = Get-ChildItem -Path $python_path -Filter "*._pth" -Recurse
 if ($pth) {
     $pth | ForEach-Object {
@@ -33,10 +33,26 @@ if ($pth) {
         }
     }
 }
-# ä½¿ç”¨ä»£ç†ä¸‹è½½get-pip.pyåˆ°$python_path
-Invoke-WebRequest -Uri $scriptUrl -OutFile "$python_path\get-pip.py" -Proxy $proxy
-# å·¥ä½œç›®å½•åˆ‡æ¢åˆ°$python_path
+
+# Ê¹ÓÃ´úÀíÏÂÔØget-pip.pyµ½$python_path£¬Èç¹ûÊ§°Ü¾ÍÓÃ±¾µØµÄ
+$localPipPath = "$PSScriptRoot\get-pip.py"
+try {
+    Write-Host "³¢ÊÔ´ÓÍøÂçÏÂÔØ get-pip.py..."
+    Invoke-WebRequest -Uri $scriptUrl -OutFile "$python_path\get-pip.py" -Proxy $proxy -ErrorAction Stop
+    Write-Host "ÏÂÔØ³É¹¦!"
+} catch {
+    Write-Host "ÍøÂçÏÂÔØÊ§°Ü: $($_.Exception.Message)"
+    if (Test-Path $localPipPath) {
+        Write-Host "Ê¹ÓÃ±¾µØ get-pip.py ÎÄ¼ş"
+        Copy-Item -Path $localPipPath -Destination "$python_path\get-pip.py" -Force
+    } else {
+        Write-Host "´íÎó: ±¾µØ±¸·İÎÄ¼ş $localPipPath ²»´æÔÚ!" -ForegroundColor Red
+        exit 1
+    }
+}
+
+# ¹¤×÷Ä¿Â¼ÇĞ»»µ½$python_path
 Write-Host "Set-Location -Path $python_path"
 Set-Location -Path $python_path
-# æ‰§è¡Œget-pip.py
+# Ö´ĞĞget-pip.py
 & $python_path\python.exe get-pip.py
