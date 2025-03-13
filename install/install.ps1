@@ -4,9 +4,9 @@ param (
     [string]$comfyui_installer_path
 ) 
 
-# 获取我的文档目录路径
-$my_documents = [Environment]::GetFolderPath("MyDocuments")
 $log_path = "$base_dir\comfyui_installer.log"
+
+Start-Transcript -Path $log_path -Append -IncludeInvocationHeader
 
 # 构建函数Write-Log，用于输出日志
 function Write-Log {
@@ -15,8 +15,7 @@ function Write-Log {
     )
     $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $log_message = "$time $message"
-    Write-Output $log_message
-    Add-Content -Path $log_path -Value $log_message
+    Write-Output $message
 }
 
 Write-Log "base_dir: $base_dir"
@@ -34,7 +33,8 @@ try {
     exit
 }
 # 测试文件夹中是否有bat_name之外的文件与文件夹，询问是否清理,不清理bat自身
-$files = Get-ChildItem -Path $base_dir -Exclude $bat_name
+$exclude_files = @($bat_name, "comfyui_installer.log")
+$files = Get-ChildItem -Path $base_dir -Exclude $exclude_files
 if ($files) {
     Write-Log "文件夹中有以下文件或文件夹："
     $files | ForEach-Object { Write-Log $_.Name }
@@ -71,6 +71,35 @@ if (Test-Path -Path $config_path) {
 }
 # 读取config.json
 $config = Get-Content -Path $config_path | ConvertFrom-Json
+
+#检测git是否已安装
+$git_path = Get-Command -Name "git" -ErrorAction SilentlyContinue
+if ($git_path) {
+    Write-Log "Git已安装"
+} else {
+    #安装Git
+    $git_installer_dir = $config.git_installer_dir
+    Write-Log "git_installer_dir: $git_installer_dir"
+    #查找git_installer_dir下最新的安装包
+    $git_installer = Get-ChildItem -Path $git_installer_dir -File |
+        Where-Object { $_.Name -match "Git-.*-64-bit.exe" } |
+        Sort-Object { [Version]($_.Name -replace "Git-", "" -replace "-.*", "") } -Descending |
+        Select-Object -First 1
+    Write-Log "git_installer: $git_installer"
+    # 静默安装Git
+    Write-Log "Git安装中..."
+    Start-Process -FilePath $git_installer.FullName -ArgumentList "/VERYSILENT /NORESTART /NOCANCEL /SP-" -Wait -NoNewWindow
+    #检测是否安装成功
+    $git_path = Get-Command -Name "C:\Program Files\Git\cmd\git" -ErrorAction SilentlyContinue
+    if ($git_path) {
+        Write-Log "Git安装成功,请重新启动一次脚本"
+        exit
+    } else {
+        Write-Log "Git安装失败"
+        pause
+        exit
+    }
+}
 
 $use_local_python = $config.use_local_python
 if ($use_local_python) {
@@ -184,7 +213,7 @@ if ($vc_installed) {
     $vc_redist_installer = $config.vc_redist_installer -replace "/", "\"
     Write-Log "vc_redist_installer: $vc_redist_installer"
     Write-Log "C++运行库安装中..."
-    Start-Process -FilePath $vc_redist_installer -ArgumentList "/install /quiet /norestart" -Wait
+    Start-Process -FilePath $vc_redist_installer -ArgumentList "/install /quiet /norestart" -Wait -NoNewWindow
     #检测是否安装成功
     Write-Log "检测C++运行库是否安装成功"
     $vc_redist = $true
@@ -205,35 +234,6 @@ if ($vc_installed) {
     }
 }
 
-#检测git是否已安装
-$git_path = Get-Command -Name "git" -ErrorAction SilentlyContinue
-if ($git_path) {
-    Write-Log "Git已安装"
-} else {
-    #安装Git
-    $git_installer_dir = $config.git_installer_dir
-    Write-Log "git_installer_dir: $git_installer_dir"
-    #查找git_installer_dir下最新的安装包
-    $git_installer = Get-ChildItem -Path $git_installer_dir -File |
-        Where-Object { $_.Name -match "Git-.*-64-bit.exe" } |
-        Sort-Object { [Version]($_.Name -replace "Git-", "" -replace "-.*", "") } -Descending |
-        Select-Object -First 1
-    Write-Log "git_installer: $git_installer"
-    # 静默安装Git
-    Write-Log "Git安装中..."
-    Start-Process -FilePath $git_installer.FullName -ArgumentList "/VERYSILENT /NORESTART /NOCANCEL /SP-" -Wait
-    #检测是否安装成功
-    $git_path = Get-Command -Name "C:\Program Files\Git\cmd\git" -ErrorAction SilentlyContinue
-    if ($git_path) {
-        Write-Log "Git安装成功,请重新启动一次脚本"
-        exit
-    } else {
-        Write-Log "Git安装失败"
-        pause
-        exit
-    }
-}
-
 # pip package install
 function pip_install {
     param (
@@ -242,10 +242,10 @@ function pip_install {
     & $python_embed_dir\Scripts\pip3.exe config list -v
     $requirements_cmd = "install -r " + $r_path
     Write-Log "安装 $r_path"
-    Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $requirements_cmd" -Wait
+    Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $requirements_cmd" -Wait -NoNewWindow
     $requirements_cmd = "install -r " + $r_path + " --upgrade"
     Write-Log "升级 $r_path"
-    Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $requirements_cmd" -Wait
+    Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe $requirements_cmd" -Wait -NoNewWindow
 }
 
 #设置pip源
@@ -256,7 +256,7 @@ Write-Log "pip_ini: $pip_config"
 Copy-Item -Path $comfyui_installer_path\$pip_config -Destination $python_embed_dir\$pip_config -Force
 
 #清理pip缓存
-Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe cache purge" -Wait
+Start-Process -FilePath "cmd" -ArgumentList "/c $python_embed_dir\Scripts\pip3.exe cache purge" -Wait -NoNewWindow
 
 $proxy_git = $config.proxy_git
 Write-Log "proxy_git: $proxy_git"
@@ -272,7 +272,7 @@ function clone_success {
     if ($branch -ne "main" -and $branch -ne "master") {
         Write-Log "切换到 $branch 分支"
         Set-Location $dir
-        Start-Process -FilePath "git" -ArgumentList "checkout $branch --force" -Wait
+        Start-Process -FilePath "git" -ArgumentList "checkout $branch --force" -Wait -NoNewWindow 
     }
     Set-Location $base_dir
     $r_path = Join-Path -Path $dir -ChildPath "requirements.txt"
@@ -299,7 +299,7 @@ function git_clone {
             # 尝试更新
             Write-Log "$name 更新中..."
             $cmd_clone = "-C $dir pull"
-            Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait
+            Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
             clone_success $dir $cmd_clone $branch
         } else {
             Write-Log "$name 克隆中..."
@@ -307,8 +307,8 @@ function git_clone {
             if ($urls.origin_LAN) {
                 $url = $urls.origin_LAN
                 $cmd_clone = "clone $url $dir"
-                Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait
-                if (Test-Path -Path $dir) {
+                Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
+                if (Test-Path -Path "$dir\.git") {
                     clone_success $dir $cmd_clone $branch
                     continue
                 }
@@ -318,16 +318,16 @@ function git_clone {
                 $url = $urls.origin
                 if ($proxy_git){
                     $cmd_clone = "clone -c http.proxy=$proxy_git $url $dir"
-                    Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait
-                    if (Test-Path -Path $dir) {
+                    Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
+                    if (Test-Path -Path "$dir\.git") {
                         clone_success $dir $cmd_clone $branch
                         continue
                     }
                 } else {
                     # 直连
                     $cmd_clone = "clone $url $dir"
-                    Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait
-                    if (Test-Path -Path $dir) {
+                    Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
+                    if (Test-Path -Path "$dir\.git") {
                         clone_success $dir $cmd_clone $branch
                         continue
                     }
@@ -367,3 +367,6 @@ try {
 } finally {
     $streamWriter.Close()
 }
+
+
+Stop-Transcript
