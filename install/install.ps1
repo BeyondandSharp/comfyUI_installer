@@ -293,51 +293,58 @@ function git_clone {
         $branch = $item.branch
         $dir = Join-Path -Path $base_dir -ChildPath $path
         $dir = Join-Path -Path $dir -ChildPath $name
+        $force = ""
 
         if (Test-Path -Path $dir) {
             Write-Log "$name 已存在"
             # 尝试更新
             Write-Log "$name 更新中..."
             $cmd_clone = "-C $dir pull"
+            try {
+                Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
+                clone_success $dir $cmd_clone $branch
+                continue
+            } catch {
+                Write-Log "$name 更新失败 将尝试强制克隆"
+                $force = "--recurse-submodules"
+            }
+        }
+
+        Write-Log "$name 克隆中..."
+        # 如果url.origin-LAN存在
+        if ($urls.origin_LAN) {
+            $url = $urls.origin_LAN
+            $cmd_clone = "clone $url $dir $force"
             Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
-            clone_success $dir $cmd_clone $branch
-        } else {
-            Write-Log "$name 克隆中..."
-            # 如果url.origin-LAN存在
-            if ($urls.origin_LAN) {
-                $url = $urls.origin_LAN
-                $cmd_clone = "clone $url $dir"
+            if (Test-Path -Path "$dir\.git") {
+                clone_success $dir $cmd_clone $branch
+                continue
+            }
+        }
+        if ($urls.origin) {
+            # 使用服务器代理
+            $url = $urls.origin
+            if ($proxy_git){
+                $cmd_clone = "clone -c http.proxy=$proxy_git $url $dir $force"
+                Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
+                if (Test-Path -Path "$dir\.git") {
+                    clone_success $dir $cmd_clone $branch
+                    continue
+                }
+            } else {
+                # 直连
+                $cmd_clone = "clone $url $dir $force"
                 Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
                 if (Test-Path -Path "$dir\.git") {
                     clone_success $dir $cmd_clone $branch
                     continue
                 }
             }
-            if ($urls.origin) {
-                # 使用服务器代理
-                $url = $urls.origin
-                if ($proxy_git){
-                    $cmd_clone = "clone -c http.proxy=$proxy_git $url $dir"
-                    Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
-                    if (Test-Path -Path "$dir\.git") {
-                        clone_success $dir $cmd_clone $branch
-                        continue
-                    }
-                } else {
-                    # 直连
-                    $cmd_clone = "clone $url $dir"
-                    Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
-                    if (Test-Path -Path "$dir\.git") {
-                        clone_success $dir $cmd_clone $branch
-                        continue
-                    }
-                }
-            }
-            else {
-                Write-Log "$name 克隆失败"
-                pause
-                exit
-            }
+        }
+        else {
+            Write-Log "$name 克隆失败"
+            pause
+            exit
         }
     }
 }
