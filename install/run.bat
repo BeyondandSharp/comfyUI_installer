@@ -10,10 +10,17 @@ set GITCACHE_HTTP_PROXY=192.168.0.100:5000
 set TOKEN_PATH=\\192.168.0.100\mcs\ComfyUI\token.json
 set "PATH=%PATH%"
 set CUSTOMNODEDB_PATH=\\192.168.0.100\mcs\ComfyUI\custom-list;\\192.168.0.100\mcs\ComfyUI\civitai-list
+set "USE_UV=true"
 
 set "script_path=%~dp0"
+set "python_path=python_embed\python.exe"
+
+if exist ".venv" (
+    set "python_path=python"
+    call .venv\Scripts\activate
+)
 
 ::Cleaning up extra lines in the <custom_nodes\.git\config> for some reason causes comfyui manager to load incorrectly
-python_embed\python.exe "\\192.168.0.100\mcs\Working_Group\Installation_package\ComfyUI\install\git_clean.py" %script_path%ComfyUI\custom_nodes
-python_embed\python.exe ComfyUI\main.py --listen 0.0.0.0 --port 8188 --auto-launch
-pause 
+%python_path% "\\192.168.0.100\mcs\Working_Group\Installation_package\ComfyUI\install\git_clean.py" %script_path%ComfyUI\custom_nodes
+%python_path% ComfyUI\main.py --listen 0.0.0.0 --port 8188 --auto-launch
+pause

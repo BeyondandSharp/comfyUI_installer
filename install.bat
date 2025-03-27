@@ -1,4 +1,4 @@
-@echo version 14
+@echo version 15
 @echo off
 
 set HTTP_PROXY=http://192.168.0.100:7897

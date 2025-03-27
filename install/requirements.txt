@@ -1,8 +1,6 @@
- --index-url http://192.168.0.100:20200/pytorch/cu126/+simple
 torch
 torchvision
 torchaudio
 xformers
 
---index-url http://192.168.0.100:20200/root/pypi/+simple
 aria2p
