@@ -12,5 +12,6 @@
     "pip_config":"//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI_uv/install/pip.ini",
     "pytorch_url": "http://192.168.0.100:20200/pytorch/cu126/+simple",
     "uv_config": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI_uv/install/uv.toml",
-    "comfyui_manager_config": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI_uv/install/comfyui_manager_config.ini"
+    "comfyui_manager_config": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI_uv/install/comfyui_manager_config.ini",
+    "run_bat": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI_uv/install/run.bat"
 }

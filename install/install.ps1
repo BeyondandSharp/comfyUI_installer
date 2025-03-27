@@ -469,17 +469,18 @@ Set-Location $base_dir
 pip_install $requirements_path
 
 #复制run.bat
-Write-Log "复制$comfyui_installer_path\run.bat 到 $base_dir"
-Copy-Item -Path $comfyui_installer_path\run.bat -Destination $base_dir -Force
+$run_bat = $config.run_bat
+Write-Log "复制$run_bat 到 $base_dir"
+Copy-Item -Path $run_bat -Destination $base_dir -Force
 #复制uv.toml
-Write-Log "复制$comfyui_installer_path\uv.toml 到 $base_dir\ComfyUI"
-Copy-Item -Path $comfyui_installer_path\uv.toml -Destination "$base_dir\ComfyUI" -Force
+Write-Log "复制$uv_config 到 $base_dir\ComfyUI"
+Copy-Item -Path $uv_config -Destination "$base_dir\ComfyUI\uv.toml" -Force
 #复制comfyui-manager的config.ini
-Write-Log "复制$comfyui_installer_path\config.ini 到 $base_dir\ComfyUI\user\default\ComfyUI-Manager"
-if(-not (Test-Path -Path "$base_dir\ComfyUI\user\default")) {
-    New-Item -Path "$base_dir\ComfyUI\user\default" -ItemType Directory -Force
-}
 $comfyui_manager_config = $config.comfyui_manager_config
+Write-Log "复制$comfyui_manager_config 到 $base_dir\ComfyUI\user\default\ComfyUI-Manager"
+if(-not (Test-Path -Path "$base_dir\ComfyUI\user\default\ComfyUI-Manager")) {
+    New-Item -Path "$base_dir\ComfyUI\user\default\ComfyUI-Manager" -ItemType Directory -Force
+}
 Copy-Item -Path $comfyui_manager_config -Destination "$base_dir\ComfyUI\user\default\ComfyUI-Manager\config.ini" -Force
 
 #查找行"set PATH=%PATH%",替换为"set PATH=$python_embed_dir\Scripts;%PATH%"
