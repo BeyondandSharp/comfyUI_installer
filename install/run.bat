@@ -10,7 +10,6 @@ set GITCACHE_HTTP_PROXY=192.168.0.100:5000
 set TOKEN_PATH=\\192.168.0.100\mcs\ComfyUI\token.json
 set "PATH=%PATH%"
 set CUSTOMNODEDB_PATH=\\192.168.0.100\mcs\ComfyUI\custom-list;\\192.168.0.100\mcs\ComfyUI\civitai-list
-set "USE_UV=true"
 
 set "script_path=%~dp0"
 set "python_path=python_embed\python.exe"
