@@ -9,9 +9,9 @@
     "vc_redist_installer": "//192.168.0.100/mcs/Working_Group/Installation_package/vc_redist/VC_redist.x64.exe",
     "git_installer_dir": "//192.168.0.100/mcs/Working_Group/Installation_package/Git",
     "proxy_git": "192.168.0.100:5000",
-    "pip_config":"//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI_uv/install/pip.ini",
+    "pip_config":"//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/pip.ini",
     "pytorch_url": "http://192.168.0.100:20200/pytorch/cu126/+simple",
-    "uv_config": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI_uv/install/uv.toml",
-    "comfyui_manager_config": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI_uv/install/comfyui_manager_config.ini",
-    "run_bat": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI_uv/install/run.bat"
+    "uv_config": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/uv.toml",
+    "comfyui_manager_config": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/comfyui_manager_config.ini",
+    "run_bat": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/run.bat"
 }

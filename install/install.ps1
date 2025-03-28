@@ -468,6 +468,13 @@ $requirements_path = Join-Path -Path $comfyui_installer_path -ChildPath "require
 Set-Location $base_dir
 pip_install $requirements_path
 
+# 离开虚拟环境
+if ($uv_path) {
+    Write-Log "离开虚拟环境"
+    $deactivate_cmd = "$base_dir\.venv\Scripts\deactivate"
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c $deactivate_cmd" -Wait -NoNewWindow
+}
+
 #复制run.bat
 $run_bat = $config.run_bat
 Write-Log "复制$run_bat 到 $base_dir"
