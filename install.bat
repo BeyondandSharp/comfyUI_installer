@@ -1,9 +1,9 @@
-@echo version 15
+@echo version 17
 @echo off
 
-set HTTP_PROXY=http://192.168.0.100:7897
-set HTTPS_PROXY=http://192.168.0.100:7897
-set NO_PROXY=localhost,127.0.0.0/8,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12
+::set HTTP_PROXY=http://192.168.0.100:7897
+::set HTTPS_PROXY=http://192.168.0.100:7897
+::set NO_PROXY=localhost,127.0.0.0/8,10.0.0.0/8,192.168.0.0/16,172.16.0.0/12
 
 set "comfyui_installer_path=\\192.168.0.100\mcs\Working_Group\Installation_package\ComfyUI"
 ::获取当前bat的文件名

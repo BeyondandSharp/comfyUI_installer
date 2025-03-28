@@ -148,6 +148,21 @@ if ($vc_installed) {
     }
 }
 
+$http_proxy = $config.http_proxy
+function proxy_switch{
+    param (
+        [bool]$switch
+    )
+    Write-Log "proxy_switch: $switch"
+    if($switch){
+        $env:HTTP_PROXY = $http_proxy
+        $env:HTTPS_PROXY = $http_proxy
+    } else {
+        $env:HTTP_PROXY = $null
+        $env:HTTPS_PROXY = $null
+    }
+}
+
 # 安装uv
 $uv_path = Get-Command -Name "uv" -ErrorAction SilentlyContinue
 if ($uv_path) {
@@ -155,7 +170,9 @@ if ($uv_path) {
 } else {
     Write-Log "uv未安装，安装中..."
     #安装uv
+    proxy_switch $true
     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    proxy_switch $false
     #检测是否安装成功
     Refresh-Env
     $uv_path = Get-Command -Name "uv" -ErrorAction SilentlyContinue
@@ -226,7 +243,7 @@ if ($use_local_python) {
                 #安装pip
                 Write-Log "安装pip..."
                 $pip_installer_path = Join-Path -Path $python_installer_dir -ChildPath "pip_installer\pip_install.ps1"
-                & $pip_installer_path -python_path $python_embed_dir -proxy $config.http_proxy
+                & $pip_installer_path -python_path $python_embed_dir -proxy $http_proxy
                 # 修改_pth
                 # 查找*._pth
                 $pth = Get-ChildItem -Path $python_embed_dir -Filter "*._pth" -Recurse
@@ -298,12 +315,13 @@ if ($uv_path) {
 
     Set-Location $base_dir
     # 激活虚拟环境
-    $activate_cmd = "$base_dir\.venv\Scripts\activate"
     Write-Log "激活虚拟环境中..."
-    try {
-        Start-Process -FilePath "cmd.exe" -ArgumentList "/c $activate_cmd" -Wait -NoNewWindow
-    }
-    catch {
+    $venv_activate_cmd = "$base_dir\.venv\Scripts\activate"
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c $venv_activate_cmd" -Wait -NoNewWindow
+    # 如果venv拒绝访问
+    if ($?) {
+        Write-Log "激活虚拟环境成功"
+    } else {
         Write-Log "激活虚拟环境失败"
         pause
         exit
@@ -403,7 +421,10 @@ function git_clone {
             Write-Log "$name 更新中..."
             $cmd_clone = "-C $dir pull"
             try {
+                Write-Log "cmd $cmd_clone"
+                proxy_switch $true
                 Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
+                proxy_switch $false
                 Write-Log "Clone Post $dir $cmd_clone $branch"
                 if (clone_finish $dir $cmd_clone $branch) {
                     continue
@@ -422,6 +443,7 @@ function git_clone {
             Write-Log "使用本地服务器克隆..."
             $url = $urls.origin_LAN
             $cmd_clone = "clone $url $dir $force"
+            Write-Log "cmd $cmd_clone"
             Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
             Write-Log "Clone Post $dir $cmd_clone $branch"
             if (clone_finish $dir $cmd_clone $branch){
@@ -430,10 +452,19 @@ function git_clone {
         }
         if ($urls.origin) {
             # 使用服务器代理
-            Write-Log "使用服务器代理克隆..."
+            Write-Log "使用服务器缓存克隆..."
             $url = $urls.origin
             if ($proxy_git){
-                $cmd_clone = "clone -c http.proxy=$proxy_git $url $dir $force"
+                # 如果是https的，替换为http
+                if ($url -match "^https://") {
+                    $url = $url -replace "https://", "http://"
+                }
+                $url = $urls.origin -replace "http://", "http://$proxy_git/"
+                $cmd_clone = "clone $url $dir $force"
+                if ($branch -ne "main" -and $branch -ne "master") {
+                   $cmd_clone = "clone $url $dir $force -b $branch"
+                }
+                Write-Log "cmd $cmd_clone"
                 Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
                 Write-Log "Clone Post $dir $cmd_clone $branch"
                 if (clone_finish $dir $cmd_clone $branch){
@@ -443,7 +474,10 @@ function git_clone {
                 # 直连
                 Write-Log "直连克隆..."
                 $cmd_clone = "clone $url $dir $force"
+                Write-Log "cmd $cmd_clone"
+                proxy_switch $true
                 Start-Process -FilePath "git" -ArgumentList $cmd_clone -Wait -NoNewWindow
+                proxy_switch $false
                 Write-Log "Clone Post $dir $cmd_clone $branch"
                 if (clone_finish $dir $cmd_clone $branch){
                     continue
@@ -467,13 +501,6 @@ git_clone $git_list
 $requirements_path = Join-Path -Path $comfyui_installer_path -ChildPath "requirements.txt"
 Set-Location $base_dir
 pip_install $requirements_path
-
-# 离开虚拟环境
-if ($uv_path) {
-    Write-Log "离开虚拟环境"
-    $deactivate_cmd = "$base_dir\.venv\Scripts\deactivate"
-    Start-Process -FilePath "cmd.exe" -ArgumentList "/c $deactivate_cmd" -Wait -NoNewWindow
-}
 
 #复制run.bat
 $run_bat = $config.run_bat
