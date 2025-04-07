@@ -105,6 +105,14 @@ if ($git_path) {
     }
 }
 
+# 关闭git代理
+$git_unset_proxy_cmd = "config --global --unset http.proxy"
+Start-Process -FilePath "git" -ArgumentList $git_unset_proxy_cmd -Wait -NoNewWindow
+$git_unset_proxy_cmd = "config --global --unset https.proxy"
+Start-Process -FilePath "git" -ArgumentList $git_unset_proxy_cmd -Wait -NoNewWindow
+$git_unset_proxy_cmd = "config --global --unset core.gitproxy"
+Start-Process -FilePath "git" -ArgumentList $git_unset_proxy_cmd -Wait -NoNewWindow
+
 #检测C++运行库是否已安装
 $msvcDlls = @(
     "msvcp140.dll",
@@ -161,6 +169,30 @@ function proxy_switch{
         $env:HTTP_PROXY = $null
         $env:HTTPS_PROXY = $null
     }
+    Write-Log "HTTP_PROXY: $env:HTTP_PROXY"
+    Write-Log "HTTPS_PROXY: $env:HTTPS_PROXY"
+    Write-Log "NO_PROXY: $env:NO_PROXY"
+}
+
+function Add-ToUserPath {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$NewPath
+    )
+
+    # 获取当前用户 Path 环境变量
+    $currentPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::User)
+
+    # 检查路径是否已存在
+    if ($currentPath -notlike "*$NewPath*") {
+        # 如果路径不存在，则添加到 Path
+        $updatedPath = "$currentPath;$NewPath"
+        [System.Environment]::SetEnvironmentVariable("Path", $updatedPath, [System.EnvironmentVariableTarget]::User)
+
+        Write-Host "路径已成功添加到用户 Path 环境变量中。" -ForegroundColor Green
+    } else {
+        Write-Host "路径已存在于用户 Path 环境变量中，无需重复添加。" -ForegroundColor Yellow
+    }
 }
 
 # 安装uv
@@ -170,8 +202,47 @@ if ($uv_path) {
 } else {
     Write-Log "uv未安装，安装中..."
     #安装uv
+    $uv_installer = $config.uv_installer
     proxy_switch $true
-    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    if ($uv_installer) {
+        Write-Log "uv_installer: $uv_installer"
+        # 安装uv
+        # 获取用户文件夹
+        $user_profile = [System.Environment]::GetFolderPath("UserProfile")
+        $target_path = Join-Path -Path $user_profile -ChildPath ".local\bin"
+        # 检查目标文件夹是否存在
+        if (-not (Test-Path -Path $target_path)) {
+            Write-Log "目标文件夹不存在，创建中..."
+            New-Item -Path $target_path -ItemType Directory -Force
+        }
+        # 检查$uv_installer\uv-x86_64-pc-windows-msvc.zip是否存在
+        $uv_installer_path = Join-Path -Path $uv_installer -ChildPath "uv-x86_64-pc-windows-msvc.zip"
+        if (Test-Path -Path $uv_installer_path) {
+            Write-Log "uv_installer_path: $uv_installer_path"
+            # 解压缩到目标文件夹
+            Write-Log "解压缩到目标文件夹..."
+            Expand-Archive -Path $uv_installer_path -DestinationPath $target_path -Force
+            # 检查解压缩是否成功
+            if (Test-Path -Path "$target_path\uv.exe") {
+                Write-Log "uv安装成功"
+                # 添加到环境变量
+                Add-ToUserPath -NewPath $target_path
+            } else {
+                Write-Log "uv安装失败"
+                pause
+                exit
+            }
+        } else {
+            Write-Log "未找到$uv_installer_path"
+            pause
+            exit
+        }
+
+    } else {
+        Write-Log "uv_installer: https://astral.sh/uv/install.ps1"
+        # 下载脚本执行
+        powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    }
     proxy_switch $false
     #检测是否安装成功
     Refresh-Env
