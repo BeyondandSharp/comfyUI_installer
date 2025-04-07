@@ -522,8 +522,8 @@ if($sample_workflows){
     $source_path = Join-Path -Path $sample_workflows -ChildPath "*"
     $target_path = Join-Path -Path $base_dir -ChildPath "ComfyUI\user\default\workflows"
     Write-Log "¸´ÖÆ$source_path µ½ $target_path"
-    if(-not (Test-Path -Path "$base_dir\ComfyUI\user\default")) {
-        New-Item -Path "$base_dir\ComfyUI\user\default" -ItemType Directory -Force
+    if(-not (Test-Path -Path $target_path)) {
+        New-Item -Path $target_path -ItemType Directory -Force
     }
     Copy-Item -Path $source_path -Destination $target_path -Force -Recurse
 }
