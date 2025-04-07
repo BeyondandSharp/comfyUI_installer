@@ -13,5 +13,6 @@
     "pytorch_url": "http://192.168.0.100:20200/pytorch/cu126/+simple",
     "uv_config": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/uv.toml",
     "comfyui_manager_config": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/comfyui_manager_config.ini",
-    "run_bat": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/run.bat"
+    "run_bat": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/run.bat",
+    "sample_workflows": "//192.168.0.100/mcs/Working_Group/Resource/Sample/ComfyUIWorkFlows"
 }
