@@ -519,11 +519,13 @@ Copy-Item -Path $comfyui_manager_config -Destination "$base_dir\ComfyUI\user\def
 #复制预设workflows
 $sample_workflows = $config.sample_workflows
 if($sample_workflows){
-    Write-Log "复制$sample_workflows 到 $base_dir\ComfyUI\user\default\workflows"
-    if(-not (Test-Path -Path "$base_dir\ComfyUI\user\default\workflows")) {
-        New-Item -Path "$base_dir\ComfyUI\user\default\workflows" -ItemType Directory -Force
+    $source_path = Join-Path -Path $sample_workflows -ChildPath "*"
+    $target_path = Join-Path -Path $base_dir -ChildPath "ComfyUI\user\default\workflows"
+    Write-Log "复制$source_path 到 $target_path"
+    if(-not (Test-Path -Path "$base_dir\ComfyUI\user\default")) {
+        New-Item -Path "$base_dir\ComfyUI\user\default" -ItemType Directory -Force
     }
-    Copy-Item -Path $sample_workflows -Destination "$base_dir\ComfyUI\user\default\ComfyUI-Manager\workflows" -Force -Recurse
+    Copy-Item -Path $source_path -Destination $target_path -Force -Recurse
 }
 
 #查找行"set PATH=%PATH%",替换为"set PATH=$python_embed_dir\Scripts;%PATH%"
