@@ -37,6 +37,62 @@
                 "origin": "http://github.com/yolain/ComfyUI-Easy-Use"
             },
             "branch": "main"
+        },
+        {
+            "name": "comfyui_controlnet_aux",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "https://github.com/Fannovel16/comfyui_controlnet_aux"
+            },
+            "branch": "main"
+        },
+        {
+            "name": "ComfyUI_LayerStyle",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "https://github.com/chflame163/ComfyUI_LayerStyle"
+            },
+            "branch": "main"
+        },
+        {
+            "name": "ComfyUI-RMBG",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "https://github.com/1038lab/ComfyUI-RMBG"
+            },
+            "branch": "main"
+        },
+        {
+            "name": "ComfyUI-DepthAnythingV2",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "https://github.com/kijai/ComfyUI-DepthAnythingV2"
+            },
+            "branch": "main"
+        },
+        {
+            "name": "ControlAltAI-Nodes",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "https://github.com/gseth/ControlAltAI-Nodes"
+            },
+            "branch": "main"
+        },
+        {
+            "name": "rgthree-comfy",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "https://github.com/rgthree/rgthree-comfy"
+            },
+            "branch": "main"
+        },
+        {
+            "name": "ComfyUI-KJNodes",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "https://github.com/kijai/ComfyUI-KJNodes"
+            },
+            "branch": "main"
         }
     ]
 }
