@@ -105,14 +105,6 @@ if ($git_path) {
     }
 }
 
-# 关闭git代理
-$git_unset_proxy_cmd = "config --global --unset http.proxy"
-Start-Process -FilePath "git" -ArgumentList $git_unset_proxy_cmd -Wait -NoNewWindow
-$git_unset_proxy_cmd = "config --global --unset https.proxy"
-Start-Process -FilePath "git" -ArgumentList $git_unset_proxy_cmd -Wait -NoNewWindow
-$git_unset_proxy_cmd = "config --global --unset core.gitproxy"
-Start-Process -FilePath "git" -ArgumentList $git_unset_proxy_cmd -Wait -NoNewWindow
-
 #检测C++运行库是否已安装
 $msvcDlls = @(
     "msvcp140.dll",
