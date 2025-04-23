@@ -187,49 +187,68 @@ function Add-ToUserPath {
     }
 }
 
-# 安装uv
-$uv_path = Get-Command -Name "uv" -ErrorAction SilentlyContinue
-if ($uv_path) {
-    Write-Log "uv已安装"
-} else {
-    Write-Log "uv未安装，安装中..."
-    #安装uv
-    $uv_installer = $config.uv_installer
-    proxy_switch $true
-    if ($uv_installer) {
-        Write-Log "uv_installer: $uv_installer"
-        # 安装uv
-        # 获取用户文件夹
-        $user_profile = [System.Environment]::GetFolderPath("UserProfile")
-        $target_path = Join-Path -Path $user_profile -ChildPath ".local\bin"
-        # 检查目标文件夹是否存在
-        if (-not (Test-Path -Path $target_path)) {
-            Write-Log "目标文件夹不存在，创建中..."
-            New-Item -Path $target_path -ItemType Directory -Force
-        }
-        # 检查$uv_installer\uv-x86_64-pc-windows-msvc.zip是否存在
-        $uv_installer_path = Join-Path -Path $uv_installer -ChildPath "uv-x86_64-pc-windows-msvc.zip"
-        if (Test-Path -Path $uv_installer_path) {
-            Write-Log "uv_installer_path: $uv_installer_path"
-            # 解压缩到目标文件夹
-            Write-Log "解压缩到目标文件夹..."
-            Expand-Archive -Path $uv_installer_path -DestinationPath $target_path -Force
-            # 检查解压缩是否成功
-            if (Test-Path -Path "$target_path\uv.exe") {
-                Write-Log "uv安装成功"
-                # 添加到环境变量
-                Add-ToUserPath -NewPath $target_path
-            } else {
-                Write-Log "uv安装失败"
-                pause
-                exit
-            }
+# uv安装函数
+function Install-UV {
+    Write-Log "uv_installer: $uv_installer"
+    # 安装uv
+    # 获取用户文件夹
+    $user_profile = [System.Environment]::GetFolderPath("UserProfile")
+    $target_path = Join-Path -Path $user_profile -ChildPath ".local\bin"
+    # 检查目标文件夹是否存在
+    if (-not (Test-Path -Path $target_path)) {
+        Write-Log "目标文件夹不存在，创建中..."
+        New-Item -Path $target_path -ItemType Directory -Force
+    }
+    # 检查$uv_installer\uv-x86_64-pc-windows-msvc.zip是否存在
+    $uv_installer_path = Join-Path -Path $uv_installer -ChildPath "uv-x86_64-pc-windows-msvc.zip"
+    if (Test-Path -Path $uv_installer_path) {
+        Write-Log "uv_installer_path: $uv_installer_path"
+        # 解压缩到目标文件夹
+        Write-Log "解压缩到目标文件夹..."
+        Expand-Archive -Path $uv_installer_path -DestinationPath $target_path -Force
+        # 检查解压缩是否成功
+        if (Test-Path -Path "$target_path\uv.exe") {
+            Write-Log "uv安装成功"
+            # 添加到环境变量
+            Add-ToUserPath -NewPath $target_path
         } else {
-            Write-Log "未找到$uv_installer_path"
+            Write-Log "uv安装失败"
             pause
             exit
         }
+    } else {
+        Write-Log "未找到$uv_installer_path"
+        pause
+        exit
+    }
+}
 
+# 安装uv
+$uv_path = Get-Command -Name "uv" -ErrorAction SilentlyContinue
+$uv_installer = $config.uv_installer
+if ($uv_path) {
+    Write-Log "uv已安装"
+    # 获取uv版本
+    $uv_version = & uv -V 2>&1
+    $uv_version = $uv_version -replace "uv ", ""
+    $uv_version = $uv_version -replace " \(.*", ""
+    $uv_version = [Version]$uv_version
+    Write-Log "uv_version: $uv_version"
+    # 获取服务器中uv版本
+    $dist_path = Join-Path -Path $uv_installer -ChildPath "dist-manifest.json"
+    $dist_content = Get-Content -Path $dist_path | ConvertFrom-Json
+    $uv_version_server = $dist_content.announcement_tag
+    $uv_version_server = [Version]$uv_version_server
+    Write-Log "uv_version_server: $uv_version_server"
+    if ($uv_version -lt $uv_version_server) {
+        Install-UV
+    }
+} else {
+    Write-Log "uv未安装，安装中..."
+    #安装uv
+    proxy_switch $true
+    if ($uv_installer) {
+        Install-UV
     } else {
         Write-Log "uv_installer: https://astral.sh/uv/install.ps1"
         # 下载脚本执行
@@ -358,9 +377,6 @@ if ($use_local_python) {
 if ($uv_path) {
     Write-Log "uv已安装，使用uv创建虚拟环境"
     $uv_config = $config.uv_config
-
-    Write-Log "更新uv..."
-    Start-Process -FilePath "uv" -ArgumentList "self update" -Wait -NoNewWindow
 
     $venv_cmd = "venv --config-file $uv_config --directory $base_dir --python $python_version --relocatable"
     try {
