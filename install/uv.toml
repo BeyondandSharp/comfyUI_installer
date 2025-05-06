@@ -4,10 +4,10 @@ upgrade = true
 
 [[index]]
 name = "pytorch-mirror"
-url = "http://192.168.0.100:20200/pytorch/cu126/+simple"
+url = "http://192.168.0.100:20200/pytorch/cu128/+simple"
 [[index]]
 name = "pypi-mirror"
 url = "http://192.168.0.100:20200/root/pypi/+simple"
 [[index]]
 name = "pytorch"
-url = "https://download.pytorch.org/whl/cu126"
+url = "https://download.pytorch.org/whl/cu128"
