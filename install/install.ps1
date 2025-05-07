@@ -378,7 +378,7 @@ if ($uv_path) {
     Write-Log "uv已安装，使用uv创建虚拟环境"
     $uv_config = $config.uv_config
 
-    $venv_cmd = "venv --config-file $uv_config --directory $base_dir --python $python_version --relocatable"
+    $venv_cmd = "venv --config-file $uv_config --directory $base_dir --python $python_version --relocatable --allow-existing "
     try {
         Write-Log "创建虚拟环境中..."
         Start-Process -FilePath "uv" -ArgumentList $venv_cmd -Wait -NoNewWindow
@@ -580,6 +580,18 @@ git_clone $git_list
 $requirements_path = Join-Path -Path $comfyui_installer_path -ChildPath "requirements.txt"
 Set-Location $base_dir
 pip_install $requirements_path
+
+#其他
+$other_scripts = $config.other_scripts
+# 遍历执行other_scripts的脚本
+foreach ($script in $other_scripts) {
+    if (Test-Path -Path $script) {
+        Write-Log "执行脚本 $script"
+        Start-Process -FilePath "powershell" -ArgumentList "-File $script -base_dir $base_dir" -Wait -NoNewWindow
+    } else {
+        Write-Log "未找到脚本 $script"
+    }
+}
 
 #复制run.bat
 $run_bat = $config.run_bat

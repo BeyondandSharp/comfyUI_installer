@@ -15,5 +15,8 @@
     "comfyui_manager_config": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/comfyui_manager_config.ini",
     "run_bat": "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/run.bat",
     "sample_workflows": "//192.168.0.100/mcs/Working_Group/Resource/Sample/ComfyUIWorkFlows",
-    "uv_installer": "//192.168.0.100/mcs/Working_Group/Installation_package/uv"
+    "uv_installer": "//192.168.0.100/mcs/Working_Group/Installation_package/uv",
+    "other_scripts": [
+        "//192.168.0.100/mcs/Working_Group/Installation_package/ComfyUI/install/other_scripts/Nunchaku_install.ps1"
+    ]
 }

@@ -93,6 +93,14 @@
                 "origin": "https://github.com/kijai/ComfyUI-KJNodes"
             },
             "branch": "main"
+        },
+        {
+            "name": "ComfyUI-nunchaku",
+            "path": "ComfyUI/custom_nodes",
+            "urls": {
+                "origin": "https://github.com/mit-han-lab/ComfyUI-nunchaku"
+            },
+            "branch": "main"
         }
     ]
 }
