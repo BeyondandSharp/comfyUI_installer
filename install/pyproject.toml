@@ -1,14 +1,15 @@
+[tool.uv]
 allow-insecure-host = ["192.168.0.100", "fileserver", "uidvfx.com", "fileserver.uidvfx.com"]
 python-install-mirror = "file://192.168.0.100/mcs/Working_Group/Installation_package/CPython"
 upgrade = true
 override-dependencies = ["numpy<=1.26.4"]
 
-[[index]]
+[[tool.uv.index]]
 name = "pytorch-mirror"
 url = "http://192.168.0.100:20200/pytorch/cu128/+simple"
-[[index]]
+[[tool.uv.index]]
 name = "pypi-mirror"
 url = "http://192.168.0.100:20200/root/pypi/+simple"
-[[index]]
+[[tool.uv.index]]
 name = "pytorch"
 url = "https://download.pytorch.org/whl/cu128"

@@ -378,9 +378,14 @@ if ($uv_path) {
     Write-Log "uv已安装，使用uv创建虚拟环境"
     $uv_config = $config.uv_config
 
-    $venv_cmd = "venv --config-file $uv_config --directory $base_dir --python $python_version --relocatable --allow-existing "
+    $uv_cp_install_cmd = "python install $python_version --config-file $uv_config"
+    Write-Log "uv_cp_install_cmd: $uv_cp_install_cmd"
+
+    $venv_cmd = "venv --config-file $uv_config --directory $base_dir --python $python_version --relocatable --allow-existing"
+    Write-Log "venv_cmd: $venv_cmd"
     try {
         Write-Log "创建虚拟环境中..."
+        Start-Process -FilePath "uv" -ArgumentList $uv_cp_install_cmd -Wait -NoNewWindow
         Start-Process -FilePath "uv" -ArgumentList $venv_cmd -Wait -NoNewWindow
     } catch {
         Write-Log "创建虚拟环境失败"
@@ -535,10 +540,10 @@ function git_clone {
             $url = $urls.origin
             if ($proxy_git){
                 # 如果是https的，替换为http
-                if ($url -match "^https://") {
-                    $url = $url -replace "https://", "http://"
+                if ($url -match "^https") {
+                    $url = $url -replace "https", "http"
                 }
-                $url = $urls.origin -replace "http://", "http://$proxy_git/"
+                $url = $url -replace "http://", "http://$proxy_git/"
                 $cmd_clone = "clone $url $dir $force"
                 if ($branch -ne "main" -and $branch -ne "master") {
                    $cmd_clone = "clone $url $dir $force -b $branch"
@@ -597,9 +602,45 @@ foreach ($script in $other_scripts) {
 $run_bat = $config.run_bat
 Write-Log "复制$run_bat 到 $base_dir"
 Copy-Item -Path $run_bat -Destination $base_dir -Force
-#复制uv.toml
-Write-Log "复制$uv_config 到 $base_dir\ComfyUI"
-Copy-Item -Path $uv_config -Destination "$base_dir\ComfyUI\uv.toml" -Force
+
+# 复制logo
+$logo_path = $config.logo_path
+Write-Log "复制$logo_path 到 $base_dir"
+Copy-Item -Path $logo_path -Destination $base_dir -Force
+
+# 创建run.bat到桌面的快捷方式
+$shortcut_path = Join-Path -Path $env:USERPROFILE -ChildPath "Desktop\ComfyUI.lnk"
+$WshShell = New-Object -ComObject WScript.Shell
+$shortcut = $WshShell.CreateShortcut($shortcut_path)
+$shortcut.TargetPath = Join-Path -Path $base_dir -ChildPath "run.bat"
+$shortcut.WorkingDirectory = $base_dir
+$shortcut.IconLocation = Join-Path -Path $base_dir -ChildPath "logo.ico"
+$shortcut.Save()
+
+# 复制logo_install
+$logo_install_path = $config.logo_install_path
+Write-Log "复制$logo_install_path 到 $base_dir"
+Copy-Item -Path $logo_install_path -Destination $base_dir -Force
+
+# 创建install.bat到桌面的快捷方式
+$shortcut_path = Join-Path -Path $env:USERPROFILE -ChildPath "Desktop\ComfyUI Update.lnk"
+$WshShell = New-Object -ComObject WScript.Shell
+$shortcut = $WshShell.CreateShortcut($shortcut_path)
+$shortcut.TargetPath = Join-Path -Path $base_dir -ChildPath "install.bat"
+$shortcut.WorkingDirectory = $base_dir
+$shortcut.IconLocation = Join-Path -Path $base_dir -ChildPath "logo_install.ico"
+$shortcut.Save()
+
+#复制 pyproject.toml
+$pyproject_config = $config.pyproject_config
+Write-Log "复制$pyproject_config 到 $base_dir"
+Copy-Item -Path $pyproject_config -Destination $base_dir -Force
+
+#复制 uv.toml
+$tmp_path = Join-Path -Path $base_dir -ChildPath "ComfyUI"
+Write-Log "复制$uv_config 到 $tmp_path"
+Copy-Item -Path $uv_config -Destination $tmp_path -Force
+
 #复制comfyui-manager的config.ini
 $comfyui_manager_config = $config.comfyui_manager_config
 Write-Log "复制$comfyui_manager_config 到 $base_dir\ComfyUI\user\default\ComfyUI-Manager"
@@ -607,6 +648,7 @@ if(-not (Test-Path -Path "$base_dir\ComfyUI\user\default\ComfyUI-Manager")) {
     New-Item -Path "$base_dir\ComfyUI\user\default\ComfyUI-Manager" -ItemType Directory -Force
 }
 Copy-Item -Path $comfyui_manager_config -Destination "$base_dir\ComfyUI\user\default\ComfyUI-Manager\config.ini" -Force
+
 #复制预设workflows
 $sample_workflows = $config.sample_workflows
 if($sample_workflows){
