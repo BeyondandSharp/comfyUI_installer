@@ -118,6 +118,40 @@ $Nunchaku_whl_dir = $config.Nunchaku_whl_dir
 # 获取版本
 $Nunchaku_version = $config.version
 
+if ($Nunchaku_version -eq "latest" -or $Nunchaku_version -eq "dev") {
+    # 将Nunchaku_whl_dir下所有文件夹的名称存入数组
+    $Nunchaku_whl_dirs = Get-ChildItem -Path $Nunchaku_whl_dir -Directory | Select-Object -ExpandProperty Name
+    # 删除名称为prerelease的元素
+    $Nunchaku_whl_dirs = $Nunchaku_whl_dirs_latest | Where-Object { $_ -ne "prerelease" }
+
+    # 转换为字典，键为文件夹名称，值为release的类型
+    $Nunchaku_whl_release_type = @{}
+    foreach ($dir in $Nunchaku_whl_dirs) {
+        $Nunchaku_whl_release_type[$dir] = ""
+    }
+    
+    if ($Nunchaku_version -eq "dev"){
+        $Nunchaku_whl_dir_dev = Join-Path -Path $Nunchaku_whl_dir -ChildPath "prerelease"
+        # 将Nunchaku_whl_dir/prerelease下所有文件夹的名称存入数组
+        $Nunchaku_whl_dirs_dev = Get-ChildItem -Path $Nunchaku_whl_dir_dev -Directory | Select-Object -ExpandProperty Name
+
+        foreach ($dir in $Nunchaku_whl_dirs_dev) {
+            $Nunchaku_whl_release_type[$dir] = "prerelease"
+        }
+
+        # 将Nunchaku_whl_dirs_dev中的元素添加到Nunchaku_whl_dirs中
+        $Nunchaku_whl_dirs += $Nunchaku_whl_dirs_dev
+    }
+
+    # 按照名称倒序排序
+    $Nunchaku_whl_dirs = $Nunchaku_whl_dirs | Sort-Object -Descending
+    Write-Host "Nunchaku whl directories: $Nunchaku_whl_dirs" -ForegroundColor Green
+} else {
+    $Nunchaku_gitid = $Nunchaku_version
+    # 在Nunchaku_whl_dir中查找名称为Nunchaku_gitid的文件夹，包括子文件夹
+    $Nunchaku_whl_dir = Get-ChildItem -Path $Nunchaku_whl_dir -Directory -Recurse | Where-Object { $_.Name -eq $Nunchaku_gitid } | Select-Object -First 1
+}
+
 # python_version 3.12.10 ->312
 $python_version = [Version]$python_version
 $python_major = $python_version.Major
@@ -135,12 +169,32 @@ if ($os -eq "win" -and $arch -eq "x86_64") {
 }
 
 # 构建文件名
-$Nunchaku_whl_name = "nunchaku-{0}+torch{5}.{6}-cp{3}{4}-cp{3}{4}-{1}_{2}.whl" -f $Nunchaku_version, $os, $arch, $python_major, $python_minor, $torch_major, $torch_minor
-Write-Host "Nunchaku whl文件名: $Nunchaku_whl_name" -ForegroundColor Green
+$Nunchaku_whl_pattern = "nunchaku-*+torch{5}.{6}-cp{3}{4}-cp{3}{4}-{1}_{2}.whl" -f $Nunchaku_version, $os, $arch, $python_major, $python_minor, $torch_major, $torch_minor
+Write-Host "Nunchaku whl pattern: $Nunchaku_whl_pattern" -ForegroundColor Green
 
-$Nunchaku_whl_path = Join-Path -Path $Nunchaku_whl_dir -ChildPath $Nunchaku_whl_name
-if (-not (Test-Path -Path $Nunchaku_whl_path)) {
-    Write-Host "未找到Nunchaku whl文件: $Nunchaku_whl_path" -ForegroundColor Red
+$Nunchaku_whl_path = $null
+
+if ($Nunchaku_version -eq "latest" -or $Nunchaku_version -eq "dev") {
+    # 遍历数组Nunchaku_whl_dirs
+    foreach ($dir in $Nunchaku_whl_dirs) {
+        $Nunchaku_whl_dir_full = Join-Path -Path $Nunchaku_whl_dir -ChildPath $Nunchaku_whl_release_type[$dir]
+        $Nunchaku_whl_dir_full = Join-Path -Path $Nunchaku_whl_dir_full -ChildPath $dir
+        Write-Host "Searching in directory: $Nunchaku_whl_dir_full"
+        $Nunchaku_whl_obj = Get-ChildItem -Path $Nunchaku_whl_dir_full -Filter $Nunchaku_whl_pattern -File | Select-Object -First 1
+        if ($Nunchaku_whl_obj) {
+            $Nunchaku_whl_path = $Nunchaku_whl_obj.FullName
+            break
+        }
+    }
+} else {
+    # 在$Nunchaku_whl_dir中查找符合Nunchaku_whl_pattern的文件
+    $Nunchaku_whl_obj = Get-ChildItem -Path $Nunchaku_whl_dir -Filter $Nunchaku_whl_pattern -File | Select-Object -First 1
+    $Nunchaku_whl_path = $Nunchaku_whl_obj.FullName
+}
+
+Write-Host "Nunchaku whl path: $Nunchaku_whl_path" -ForegroundColor Green
+if ($null -eq $Nunchaku_whl_path) {
+    Write-Error "未找到符合模式的whl文件，请检查配置文件和目录"
     exit 1
 }
 
